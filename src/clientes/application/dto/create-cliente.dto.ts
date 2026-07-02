@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEmail, Length, Matches, IsNumberString } from 'class-validator';
+import { IsString, IsNotEmpty, IsEmail, Length, Matches, IsNumberString, MinLength } from 'class-validator';
 
 export class CreateClienteDto {
   @IsString()
@@ -25,4 +25,9 @@ export class CreateClienteDto {
   @IsNotEmpty({ message: 'O telefone não pode estar vazio' })
   @IsNumberString({}, { message: 'O telefone deve conter apenas números' })
   telefone!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6, { message: 'A senha deve ter no mínimo 6 caracteres' }) // <-- Adicionar validação
+  senha!: string;
 }

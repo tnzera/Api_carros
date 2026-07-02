@@ -9,12 +9,15 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseGuards
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { CarrosService } from '../application/carros.service';
 import { CreateCarroDto } from '../application/dto/create-carro.dto';
 import { UpdateCarroDto } from '../application/dto/update-carro.dto';
 
 @Controller('carros')
+@UseGuards(AuthGuard('jwt'))
 export class CarrosController {
   constructor(private readonly carrosService: CarrosService) {}
 

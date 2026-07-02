@@ -20,6 +20,7 @@ export class ClienteTypeOrmRepository implements IClienteRepository {
       entity.cnh,
       entity.email,
       entity.telefone,
+      entity.senha,
     );
   }
 
@@ -49,6 +50,11 @@ export class ClienteTypeOrmRepository implements IClienteRepository {
     const entity = await this.repository.findOneOrFail({ where: { id } });
     return this.toDomain(entity);
   }
+
+  async buscarPorEmail(email: string): Promise<Cliente | null> {
+    const entity = await this.repository.findOne({ where: { email } });
+    return entity ? this.toDomain(entity) : null;
+}
 
   async remover(id: number): Promise<void> {
     await this.repository.delete(id);

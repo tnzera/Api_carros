@@ -19,4 +19,7 @@ export class ClienteTypeOrmEntity {
 
   @Column()
   telefone!: string;
+
+  @Column({ type: 'varchar', nullable: false }) // <-- Adicionar coluna física
+  senha!: string;
 }

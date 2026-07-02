@@ -3,6 +3,7 @@ import { Cliente } from '../domain/cliente.entity';
 import { IClienteRepository } from '../domain/cliente.repository';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
+import * as bcrypt from 'bcrypt';
 
 export const CLIENTE_REPOSITORY = 'CLIENTE_REPOSITORY';
 
@@ -14,11 +15,21 @@ export class ClientesService {
   ) {}
 
   async criar(dto: CreateClienteDto): Promise<Cliente> {
-    // CPF Duplicado
-    const existe = await this.clienteRepository.buscarPorCpf(dto.cpf);
-    if (existe) {
+    //Validar CPF Duplicado
+    const existeCpf = await this.clienteRepository.buscarPorCpf(dto.cpf);
+    if (existeCpf) {
       throw new ConflictException(`Já existe um cliente cadastrado com o CPF ${dto.cpf}`);
     }
+
+    // Validar E-mail Duplicado 
+    const existeEmail = await this.clienteRepository.buscarPorEmail(dto.email);
+    if (existeEmail) {
+      throw new ConflictException(`Já existe um cliente cadastrado com o e-mail ${dto.email}`);
+    }
+
+    //Criptografar a senha
+    const salt = await bcrypt.genSalt(10);
+    const senhaCriptografada = await bcrypt.hash(dto.senha, salt);
     
     const cliente = new Cliente(
       undefined, 
@@ -26,10 +37,16 @@ export class ClientesService {
       dto.cpf, 
       dto.cnh, 
       dto.email, 
-      dto.telefone
+      dto.telefone,
+      senhaCriptografada 
     );
     
-    return this.clienteRepository.criar(cliente);
+    const clienteSalvo = await this.clienteRepository.criar(cliente);
+
+    //remover a senha do retorno
+    const { senha, ...clienteSemSenha } = clienteSalvo;
+
+    return clienteSemSenha as Cliente;
   }
 
   listar(): Promise<Cliente[]> {

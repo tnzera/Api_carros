@@ -9,12 +9,15 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseGuards
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ReservasService } from '../application/reservas.service';
 import { CreateReservaDto } from '../application/dto/create-reserva.dto';
 import { UpdateReservaDto } from '../application/dto/update-reserva.dto';
 
 @Controller('reservas')
+@UseGuards(AuthGuard())
 export class ReservasController {
   constructor(private readonly reservasService: ReservasService) {}
 
