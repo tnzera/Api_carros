@@ -9,12 +9,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CarrosService } from '../application/carros.service';
 import { CreateCarroDto } from '../application/dto/create-carro.dto';
 import { UpdateCarroDto } from '../application/dto/update-carro.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 @Controller('carros')
 @UseGuards(AuthGuard('jwt'))
@@ -27,8 +29,8 @@ export class CarrosController {
   }
 
   @Get()
-  listar() {
-    return this.carrosService.listar();
+  listar(@Query() pagination: PaginationQueryDto) {
+    return this.carrosService.listar(pagination);
   }
 
   @Get(':id')

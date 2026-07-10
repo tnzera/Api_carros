@@ -3,6 +3,8 @@ import { Cliente } from '../domain/cliente.entity';
 import { IClienteRepository } from '../domain/cliente.repository';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginatedResult } from '../../common/dto/paginated-result';
 import * as bcrypt from 'bcrypt';
 
 export const CLIENTE_REPOSITORY = 'CLIENTE_REPOSITORY';
@@ -41,16 +43,12 @@ export class ClientesService {
       senhaCriptografada 
     );
     
-    const clienteSalvo = await this.clienteRepository.criar(cliente);
-
-    //remover a senha do retorno
-    const { senha, ...clienteSemSenha } = clienteSalvo;
-
-    return clienteSemSenha as Cliente;
+    // A senha é omitida da resposta pelo @Exclude na entidade + ClassSerializerInterceptor
+    return this.clienteRepository.criar(cliente);
   }
 
-  listar(): Promise<Cliente[]> {
-    return this.clienteRepository.listar();
+  listar(pagination: PaginationQueryDto): Promise<PaginatedResult<Cliente>> {
+    return this.clienteRepository.listar(pagination.page, pagination.limit);
   }
 
   async buscarPorId(id: number): Promise<Cliente> {

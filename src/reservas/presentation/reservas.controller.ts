@@ -9,15 +9,17 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ReservasService } from '../application/reservas.service';
 import { CreateReservaDto } from '../application/dto/create-reserva.dto';
 import { UpdateReservaDto } from '../application/dto/update-reserva.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 @Controller('reservas')
-@UseGuards(AuthGuard())
+@UseGuards(AuthGuard('jwt'))
 export class ReservasController {
   constructor(private readonly reservasService: ReservasService) {}
 
@@ -27,8 +29,8 @@ export class ReservasController {
   }
 
   @Get()
-  listar() {
-    return this.reservasService.listar();
+  listar(@Query() pagination: PaginationQueryDto) {
+    return this.reservasService.listar(pagination);
   }
 
   @Get(':id')

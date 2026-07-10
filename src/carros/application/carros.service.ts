@@ -3,6 +3,8 @@ import { Carro } from '../domain/carro.entity';
 import { ICarroRepository } from '../domain/carro.repository';
 import { CreateCarroDto } from './dto/create-carro.dto';
 import { UpdateCarroDto } from './dto/update-carro.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginatedResult } from '../../common/dto/paginated-result';
 
 export const CARRO_REPOSITORY = 'CARRO_REPOSITORY';
 
@@ -28,8 +30,8 @@ export class CarrosService {
   return this.carroRepository.criar(carro);
 }
 
-  listar(): Promise<Carro[]> {
-    return this.carroRepository.listar();
+  listar(pagination: PaginationQueryDto): Promise<PaginatedResult<Carro>> {
+    return this.carroRepository.listar(pagination.page, pagination.limit);
   }
 
   async buscarPorId(id: number): Promise<Carro> {

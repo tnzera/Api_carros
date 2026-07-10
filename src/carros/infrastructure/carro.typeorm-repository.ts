@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Carro } from '../domain/carro.entity';
 import { ICarroRepository } from '../domain/carro.repository';
 import { CarroTypeOrmEntity } from './carro.typeorm-entity';
+import { buildPaginatedResult, PaginatedResult } from '../../common/dto/paginated-result';
 
 @Injectable()
 export class CarroTypeOrmRepository implements ICarroRepository {
@@ -27,9 +28,14 @@ export class CarroTypeOrmRepository implements ICarroRepository {
     return this.toEntity(saved);
   }
 
-  async listar(): Promise<Carro[]> {
-    const entities = await this.repo.find();
-    return entities.map((e) => this.toEntity(e));
+  async listar(page: number, limit: number): Promise<PaginatedResult<Carro>> {
+    const [entities, total] = await this.repo.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { id: 'ASC' },
+    });
+    const data = entities.map((e) => this.toEntity(e));
+    return buildPaginatedResult(data, total, page, limit);
   }
 
   async buscarPorId(id: number): Promise<Carro | null> {

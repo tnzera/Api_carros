@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Cliente } from '../domain/cliente.entity';
 import { IClienteRepository } from '../domain/cliente.repository';
 import { ClienteTypeOrmEntity } from './cliente.typeorm-entity';
+import { buildPaginatedResult, PaginatedResult } from '../../common/dto/paginated-result';
 
 @Injectable()
 export class ClienteTypeOrmRepository implements IClienteRepository {
@@ -30,9 +31,14 @@ export class ClienteTypeOrmRepository implements IClienteRepository {
     return this.toDomain(salvo);
   }
 
-  async listar(): Promise<Cliente[]> {
-    const entities = await this.repository.find();
-    return entities.map(this.toDomain);
+  async listar(page: number, limit: number): Promise<PaginatedResult<Cliente>> {
+    const [entities, total] = await this.repository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { id: 'ASC' },
+    });
+    const data = entities.map((e) => this.toDomain(e));
+    return buildPaginatedResult(data, total, page, limit);
   }
 
   async buscarPorId(id: number): Promise<Cliente | null> {

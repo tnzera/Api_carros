@@ -6,10 +6,12 @@ import { ReservasService, RESERVA_REPOSITORY } from './application/reservas.serv
 import { ReservaTypeOrmEntity } from './infrastructure/reserva.typeorm-entity';
 import { ReservaTypeOrmRepository } from './infrastructure/reserva.typeorm-repository';
 import { ReservasController } from './presentation/reservas.controller';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ReservaTypeOrmEntity]),
+    PassportModule,
     CarrosModule,   
     ClientesModule, 
   ],

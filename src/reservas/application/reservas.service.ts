@@ -5,6 +5,8 @@ import { Reserva } from '../domain/reserva.entity';
 import { IReservaRepository } from '../domain/reserva.repository';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginatedResult } from '../../common/dto/paginated-result';
 
 export const RESERVA_REPOSITORY = 'RESERVA_REPOSITORY';
 
@@ -37,8 +39,8 @@ export class ReservasService {
     return this.reservaRepository.criar(reserva);
   }
 
-  listar(): Promise<Reserva[]> {
-    return this.reservaRepository.listar();
+  listar(pagination: PaginationQueryDto): Promise<PaginatedResult<Reserva>> {
+    return this.reservaRepository.listar(pagination.page, pagination.limit);
   }
 
   async buscarPorId(id: number): Promise<Reserva> {

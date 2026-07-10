@@ -9,31 +9,39 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ClientesService } from '../application/clientes.service';
 import { CreateClienteDto } from '../application/dto/create-cliente.dto';
 import { UpdateClienteDto } from '../application/dto/update-cliente.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 @Controller('clientes')
 export class ClientesController {
   constructor(private readonly clientesService: ClientesService) {}
 
+  // Cadastro público — permite o registro de novos clientes sem autenticação
   @Post()
   criar(@Body() dto: CreateClienteDto) {
     return this.clientesService.criar(dto);
   }
 
   @Get()
-  listar() {
-    return this.clientesService.listar();
+  @UseGuards(AuthGuard('jwt'))
+  listar(@Query() pagination: PaginationQueryDto) {
+    return this.clientesService.listar(pagination);
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
   buscarPorId(@Param('id', ParseIntPipe) id: number) {
     return this.clientesService.buscarPorId(id);
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
   atualizar(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateClienteDto,
@@ -42,6 +50,7 @@ export class ClientesController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   async remover(@Param('id', ParseIntPipe) id: number) {
     await this.clientesService.remover(id);

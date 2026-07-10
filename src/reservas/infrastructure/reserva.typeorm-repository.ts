@@ -6,6 +6,7 @@ import { IReservaRepository } from '../domain/reserva.repository';
 import { ReservaTypeOrmEntity } from './reserva.typeorm-entity';
 import { Carro } from '../../carros/domain/carro.entity';
 import { Cliente } from '../../clientes/domain/cliente.entity';
+import { buildPaginatedResult, PaginatedResult } from '../../common/dto/paginated-result';
 
 @Injectable()
 export class ReservaTypeOrmRepository implements IReservaRepository {
@@ -18,7 +19,7 @@ export class ReservaTypeOrmRepository implements IReservaRepository {
     return new Reserva(
       entity.id,
       new Carro(entity.carro.id, entity.carro.marca, entity.carro.modelo, entity.carro.placa, Number(entity.carro.diaria)),
-      new Cliente(entity.cliente.id, entity.cliente.nome, entity.cliente.cpf, entity.cliente.cnh, entity.cliente.email, entity.cliente.telefone),
+      new Cliente(entity.cliente.id, entity.cliente.nome, entity.cliente.cpf, entity.cliente.cnh, entity.cliente.email, entity.cliente.telefone, entity.cliente.senha),
       entity.dataInicio,
       entity.dataFim,
     );
@@ -36,9 +37,14 @@ export class ReservaTypeOrmRepository implements IReservaRepository {
     return this.toDomain(completo);
   }
 
-  async listar(): Promise<Reserva[]> {
-    const entities = await this.repository.find();
-    return entities.map(this.toDomain);
+  async listar(page: number, limit: number): Promise<PaginatedResult<Reserva>> {
+    const [entities, total] = await this.repository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { id: 'ASC' },
+    });
+    const data = entities.map((e) => this.toDomain(e));
+    return buildPaginatedResult(data, total, page, limit);
   }
 
   async buscarPorId(id: number): Promise<Reserva | null> {

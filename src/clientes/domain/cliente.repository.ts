@@ -1,8 +1,9 @@
+import { PaginatedResult } from '../../common/dto/paginated-result';
 import { Cliente } from './cliente.entity';
 
 export abstract class IClienteRepository {
   abstract criar(cliente: Cliente): Promise<Cliente>;
-  abstract listar(): Promise<Cliente[]>;
+  abstract listar(page: number, limit: number): Promise<PaginatedResult<Cliente>>;
   abstract buscarPorId(id: number): Promise<Cliente | null>;
   abstract buscarPorCpf(cpf: string): Promise<Cliente | null>; 
   abstract buscarPorEmail(email: string): Promise<Cliente | null>;
