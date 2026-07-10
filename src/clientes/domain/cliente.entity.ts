@@ -8,9 +8,12 @@ export class Cliente {
   public email: string;
   public telefone: string;
 
-  // Omitido de todas as respostas HTTP pelo ClassSerializerInterceptor
+  // Omitido respostas HTTP
   @Exclude()
   public senha: string;
+
+  //  somente 'admin'
+  public role: string;
 
   constructor(
     id: number | undefined,
@@ -20,6 +23,7 @@ export class Cliente {
     email: string,
     telefone: string,
     senha: string,
+    role: string = 'cliente',
   ) {
     this.id = id;
     this.nome = nome;
@@ -28,5 +32,6 @@ export class Cliente {
     this.email = email;
     this.telefone = telefone;
     this.senha = senha;
+    this.role = role;
   }
 }

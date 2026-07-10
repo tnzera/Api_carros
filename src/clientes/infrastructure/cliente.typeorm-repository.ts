@@ -22,6 +22,7 @@ export class ClienteTypeOrmRepository implements IClienteRepository {
       entity.email,
       entity.telefone,
       entity.senha,
+      entity.role,
     );
   }
 

@@ -5,9 +5,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Libera o consumo da API pelo front-end 
+  // Libera o consumo da API pelo front-end:
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    origin: [
+      /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/,
+      ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+    ],
     credentials: true,
   });
 

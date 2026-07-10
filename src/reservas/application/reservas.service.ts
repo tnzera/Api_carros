@@ -69,7 +69,8 @@ export class ReservasService {
     }
 
     if (dto.carroId || dto.dataInicio || dto.dataFim) {
-      const disponivel = await this.reservaRepository.verificarDisponibilidade(carro.id!, inicio, fim);
+      // Passa o id da própria reserva para que ela não conflite consigo mesma
+      const disponivel = await this.reservaRepository.verificarDisponibilidade(carro.id!, inicio, fim, id);
       if (!disponivel) {
         throw new ConflictException('O veículo está indisponível para alteração no período informado');
       }

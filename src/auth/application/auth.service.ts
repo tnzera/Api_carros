@@ -22,10 +22,15 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
 
-    // Compara a senha 
+    // Compara a senha
     const senhaValida = await bcrypt.compare(dto.senha, cliente.senha);
     if (!senhaValida) {
       throw new UnauthorizedException('E-mail ou senha incorretos');
+    }
+
+    // O sistema é um painel administrativo: somente admins podem logar
+    if (cliente.role !== 'admin') {
+      throw new UnauthorizedException('Acesso restrito a administradores');
     }
 
     

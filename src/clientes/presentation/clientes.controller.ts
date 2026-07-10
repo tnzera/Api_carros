@@ -22,8 +22,9 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 export class ClientesController {
   constructor(private readonly clientesService: ClientesService) {}
 
-  // Cadastro público — permite o registro de novos clientes sem autenticação
+  // Somente admins autenticados cadastram clientes
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   criar(@Body() dto: CreateClienteDto) {
     return this.clientesService.criar(dto);
   }

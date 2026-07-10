@@ -22,4 +22,8 @@ export class ClienteTypeOrmEntity {
 
   @Column({ type: 'varchar', nullable: false }) // <-- Adicionar coluna física
   senha!: string;
+
+  // 'admin' pode logar no sistema; 'cliente' é apenas um registro gerenciado
+  @Column({ type: 'varchar', default: 'cliente' })
+  role!: string;
 }

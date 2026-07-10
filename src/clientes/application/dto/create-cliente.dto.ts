@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEmail, Length, Matches, IsNumberString, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsEmail, IsIn, IsOptional, Length, Matches, IsNumberString, MinLength } from 'class-validator';
 
 export class CreateClienteDto {
   @IsString()
@@ -30,4 +30,9 @@ export class CreateClienteDto {
   @IsNotEmpty()
   @MinLength(6, { message: 'A senha deve ter no mínimo 6 caracteres' }) // <-- Adicionar validação
   senha!: string;
+
+  // Opcional: só admins chegam aqui (apenas eles conseguem token), então é seguro aceitar
+  @IsOptional()
+  @IsIn(['cliente', 'admin'], { message: "O papel deve ser 'cliente' ou 'admin'" })
+  role?: string;
 }

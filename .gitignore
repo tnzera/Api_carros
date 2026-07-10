@@ -47,6 +47,7 @@ insomnia_collection.json
 # temp directory
 .temp
 .tmp
+.claude
 
 # Runtime data
 pids

@@ -1,91 +1,187 @@
-Uma API RESTful robusta desenvolvida em **NestJS** e **TypeORM**, estruturada sob os princípios de **Clean Architecture** (Arquitetura Limpa) e conceitos de **Domain-Driven Design (DDD)**. O projeto foi concebido para gerenciar de forma eficiente o fluxo de locação de veículos, dividindo-se em três pilares fundamentais: Carros, Clientes e Reservas.
+# 🚗 Locadora de Carros — Sistema Fullstack
 
-## 🏛️ Arquitetura do Projeto
+Sistema de gerenciamento de locadora de veículos composto por uma **API RESTful** em **NestJS + TypeORM (PostgreSQL)** e um **painel administrativo SPA** em **React + TypeScript (Vite)**.
+
+O backend é estruturado sob os princípios de **Clean Architecture** e conceitos de **Domain-Driven Design (DDD)**, dividido em três pilares de negócio: Carros, Clientes e Reservas, protegidos por autenticação **JWT** com controle de acesso por papéis (**RBAC**).
+
+---
+
+## 🏛️ Arquitetura do Backend
 
 A solução adota uma separação rígida de responsabilidades em camadas isoladas, garantindo alta testabilidade, independência de frameworks no núcleo de negócios e facilidade de manutenção.
 
 ```text
 src/
-└── [modulo]/
+├── common/             # Recursos compartilhados (DTOs de paginação)
+├── auth/               # Autenticação JWT (login, estratégia Passport)
+└── [modulo]/           # carros | clientes | reservas
     ├── domain/         # Núcleo de negócio: Entidades puras e interfaces de repositórios
     ├── application/    # Casos de uso: Serviços, DTOs de entrada e regras de aplicação
     ├── infrastructure/ # Detalhes técnicos: Entidades TypeORM e repositórios concretos
     └── presentation/   # Camada de entrada: Controllers HTTP e mapeamento de rotas
 ```
 
-### Detalhamento das Camadas:
-* **Domain (Domínio):** Contém as entidades de negócio puras da aplicação e as interfaces (`abstract classes`) dos repositórios. Não possui dependências de frameworks externos ou ORMs.
-* **Application (Aplicação):** Orquestra o fluxo de dados, contém os serviços (`Services`) e define os objetos de transferência de dados (DTOs) com suas respectivas regras de validação.
-* **Infrastructure (Infraestrutura):** Implementa o mapeamento de dados com o banco de dados através do TypeORM (Mapeamento de tabelas, relacionamentos e persistência real).
-* **Presentation (Apresentação):** Expõe os endpoints HTTP utilizando os controladores do NestJS, gerenciando os códigos de status e payloads de resposta.
+### Detalhamento das Camadas
+* **Domain (Domínio):** Entidades de negócio puras e interfaces (`abstract classes`) dos repositórios. Sem dependências de frameworks ou ORMs.
+* **Application (Aplicação):** Orquestra o fluxo de dados, contém os serviços (`Services`) e define os DTOs com suas regras de validação.
+* **Infrastructure (Infraestrutura):** Implementa a persistência com TypeORM (mapeamento de tabelas, relacionamentos e repositórios concretos).
+* **Presentation (Apresentação):** Expõe os endpoints HTTP via controllers do NestJS, gerenciando códigos de status e payloads de resposta.
+
+## 🖥️ Arquitetura do Frontend
+
+SPA minimalista em React 19 + TypeScript, sem bibliotecas de estado ou estilização externas (CSS puro com design tokens).
+
+```text
+frontend/src/
+├── api/           # Cliente HTTP central (injeção do JWT, tratamento de erros) e tipos
+├── auth/          # Contexto de autenticação (sessão via localStorage)
+├── components/    # Layout (sidebar), Modal, Pagination
+└── pages/         # Login, Dashboard, Carros, Clientes, Reservas (CRUD completo)
+```
+
+---
+
+## 🔐 Autenticação e Controle de Acesso (RBAC)
+
+* Login via `POST /auth/login` (e-mail + senha) retorna um **token JWT** (expiração configurável).
+* Senhas armazenadas com hash **bcrypt**; o campo nunca é exposto nas respostas (`@Exclude` + `ClassSerializerInterceptor` global).
+* O sistema é um **painel administrativo**: apenas usuários com `role = 'admin'` conseguem logar. Clientes comuns (`role = 'cliente'`) são apenas registros gerenciados.
+* Como somente admins obtêm tokens, todo acesso autenticado é, por definição, administrativo — novos admins são criados/promovidos pelo próprio painel.
+* Todos os endpoints exigem JWT (guard do Passport), exceto o login.
+
+## ⚡ Estratégia de Performance: Paginação (via ORM)
+
+Todas as listagens são paginadas no banco de dados com `findAndCount` + `skip`/`take` do TypeORM (SQL `LIMIT`/`OFFSET`), com ordenação estável por `id`:
+
+```
+GET /carros?page=2&limit=10
+```
+```json
+{ "data": [...], "total": 42, "page": 2, "limit": 10, "lastPage": 5 }
+```
+
+* `page` ≥ 1 e `limit` entre 1 e 100 (validados via DTO; valores fora da faixa retornam 400).
+* Evita trafegar a tabela inteira por requisição — o ganho cresce com o volume de dados.
+* O frontend consome `total`/`lastPage` para montar os controles de navegação.
 
 ---
 
 ## 🚀 Funcionalidades e Módulos
 
 ### 1. Módulo de Carros
-Responsável pela gestão da frota de veículos disponíveis para locação.
+Gestão da frota de veículos disponíveis para locação.
 * **Campos:** Marca, Modelo, Placa e Valor da Diária.
-* **Regras de Negócio e Validações:**
-    * Bloqueio de cadastro de veículos com a mesma placa (Conflito de dados).
-    * Validação obrigatória de preenchimento para marca, modelo e placa.
-    * Garantia de que o valor da diária seja sempre um número positivo.
+* **Regras de Negócio:**
+    * Bloqueio de cadastro de veículos com a mesma placa (`409 Conflict`).
+    * Validação obrigatória de marca, modelo e placa; diária sempre positiva.
 
 ### 2. Módulo de Clientes
-Gerencia o cadastro de usuários habilitados a realizar locações.
-* **Campos:** Nome, CPF, CNH, E-mail e Telefone.
-* **Regras de Negócio e Validações:**
-    * Impedimento de CPFs duplicados na base de dados.
-    * Validação estrita de formato de e-mail.
-    * Validação simplificada para CPF, CNH e Telefone, aceitando strings compostas estritamente por caracteres numéricos (facilitando integrações e testes).
+Cadastro de clientes e usuários administrativos do sistema.
+* **Campos:** Nome, CPF, CNH, E-mail, Telefone, Senha e Papel (`cliente` | `admin`).
+* **Regras de Negócio:**
+    * CPF e e-mail únicos na base (`409 Conflict`).
+    * CPF e CNH com exatamente 11 dígitos numéricos; e-mail com formato válido.
+    * Senha com mínimo de 6 caracteres, armazenada com bcrypt.
+    * O papel aceita apenas os valores `cliente` ou `admin` (`@IsIn`).
 
 ### 3. Módulo de Reservas
-O motor de regras de negócio do sistema, onde ocorrem os relacionamentos relacionais.
-* **Campos:** Carro vinculado, Cliente vinculado, Data/Hora de Início, Data/Hora de Fim e Data de Devolução (opcional).
-* **Regras de Negócio e Validações:**
-    * **Consistência Relacional:** Valida se o carro e o cliente de fato existem nas respectivas bases antes de efetivar o agendamento.
-    * **Validação Temporal:** A data de início da locação deve ser obrigatoriamente anterior à data de término.
-    * **Bloqueio de Conflitos:** O sistema verifica a grade de horários do veículo e impede o agendamento caso o carro já possua uma locação ativa no período selecionado.
-    * **Status Dinâmico (`estaAtrasado`):** A entidade de domínio calcula em tempo real se o prazo de entrega foi ultrapassado sem a necessidade de persistir flags booleanas estáticas no banco de dados, evitando processamento assíncrono desnecessário.
+O motor de regras de negócio do sistema, relacionando carros e clientes.
+* **Campos:** Carro vinculado, Cliente vinculado, Data/Hora de Início e Data/Hora de Fim.
+* **Regras de Negócio:**
+    * **Consistência relacional:** valida a existência do carro e do cliente antes de agendar.
+    * **Validação temporal:** a data de início deve ser anterior à data de fim.
+    * **Bloqueio de conflitos:** impede reservar um carro que já possui locação com período sobreposto (`409 Conflict`).
+
+---
+
+## 📋 Endpoints da API
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|:---:|-----------|
+| POST | `/auth/login` | — | Login (somente admins) |
+| GET | `/carros?page=&limit=` | 🔒 | Lista paginada de carros |
+| POST | `/carros` | 🔒 | Cadastra carro |
+| GET/PATCH/DELETE | `/carros/:id` | 🔒 | Busca, atualiza ou remove |
+| GET | `/clientes?page=&limit=` | 🔒 | Lista paginada de clientes |
+| POST | `/clientes` | 🔒 | Cadastra cliente (aceita `role`) |
+| GET/PATCH/DELETE | `/clientes/:id` | 🔒 | Busca, atualiza ou remove |
+| GET | `/reservas?page=&limit=` | 🔒 | Lista paginada de reservas |
+| POST | `/reservas` | 🔒 | Cria reserva |
+| GET/PATCH/DELETE | `/reservas/:id` | 🔒 | Busca, atualiza ou remove |
+
+Rotas autenticadas exigem o header `Authorization: Bearer <token>`.
+Uma coleção do Insomnia está disponível em [`insomnia_collection.json`](insomnia_collection.json).
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-* **Runtime:** [Node.js](https://nodejs.org/) (v18+)
-* **Framework:** [NestJS](https://nestjs.com/)
-* **ORM:** [TypeORM](https://typeorm.io/)
-* **Banco de Dados:** PostgreSQL / MySQL (Configurável via TypeORM)
-* **Validação:** `class-validator` & `class-transformer`
+| Backend | Frontend |
+|---|---|
+| Node.js (v18+) / NestJS | React 19 + TypeScript |
+| TypeORM + PostgreSQL | Vite |
+| Passport + JWT + bcrypt | React Router |
+| class-validator / class-transformer | CSS puro (design tokens) |
 
 ---
 
 ## 📦 Instalação e Execução
 
-1. Clone o repositório para o seu ambiente local:
-   ```bash
-   git clone <url-do-repositorio>
-   cd api_cars
-   ```
+### Pré-requisitos
+* Node.js v18+ e PostgreSQL rodando localmente com um banco criado (ex.: `locacao_carros`).
 
-2. Instale as dependências do projeto:
-   ```bash
-   npm install
-   ```
+### 1. Backend (API)
 
-3. Certifique-se de configurar as credenciais do seu banco de dados no arquivo `src/app.module.ts` (ou utilize variáveis de ambiente `.env` apropriadas).
+```bash
+npm install
+```
 
-4. Execute a aplicação em modo de desenvolvimento:
-   ```bash
-   npm run start:dev
-   ```
-   A API estará disponível por padrão em: `http://localhost:3000`.
+Crie um arquivo `.env` na raiz (veja `.env.example`):
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASS=sua_senha
+DB_NAME=locacao_carros
+JWT_SECRET=uma-chave-aleatoria-longa-e-secreta
+JWT_EXPIRES_IN=1d
+```
+
+```bash
+npm run start:dev
+# API disponível em http://localhost:3000
+```
+
+> As tabelas são criadas automaticamente na primeira execução (`synchronize: true` — apenas para desenvolvimento).
+
+### 2. Primeiro administrador
+
+Como todos os endpoints exigem login e apenas admins logam, o primeiro admin deve ser criado diretamente no banco (problema clássico do "primeiro usuário"). Com pelo menos um cliente cadastrado, promova-o:
+
+```sql
+UPDATE clientes SET role = 'admin' WHERE email = 'seu@email.com';
+```
+
+A partir daí, novos admins são criados pelo próprio painel (campo **Tipo** no formulário de clientes).
+
+### 3. Frontend (Painel)
+
+```bash
+cd frontend
+npm install
+npm run dev
+# Painel disponível em http://localhost:5173
+```
+
+A URL da API é configurável em `frontend/.env` (`VITE_API_URL`, padrão `http://localhost:3000`).
 
 ---
 
 ## 🛡️ Defesa de Dados Globais
 
-A API utiliza uma estratégia de validação global na raiz do projeto (`src/main.ts`) através do `ValidationPipe`. Isso garante que:
-* Propriedades não mapeadas nos DTOs sejam automaticamente filtradas e descartadas (`whitelist: true`).
-* Requisições contendo propriedades maliciosas ou desconhecidas sejam rejeitadas imediatamente (`forbidNonWhitelisted: true`).
-* Os payloads de entrada sejam automaticamente tipados e convertidos para as instâncias corretas das classes de transferência (`transform: true`).
+A API aplica proteções globais em `src/main.ts`:
+
+* **`ValidationPipe`** — propriedades fora dos DTOs são rejeitadas (`whitelist` + `forbidNonWhitelisted`) e os payloads são convertidos para as classes corretas (`transform`).
+* **`ClassSerializerInterceptor`** — campos sensíveis marcados com `@Exclude` (como a senha) são removidos de todas as respostas, inclusive em objetos aninhados.
+* **CORS restrito** — apenas origens locais de desenvolvimento e a URL definida em `FRONTEND_URL` são autorizadas.

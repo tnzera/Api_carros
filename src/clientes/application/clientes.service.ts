@@ -34,13 +34,14 @@ export class ClientesService {
     const senhaCriptografada = await bcrypt.hash(dto.senha, salt);
     
     const cliente = new Cliente(
-      undefined, 
-      dto.nome, 
-      dto.cpf, 
-      dto.cnh, 
-      dto.email, 
+      undefined,
+      dto.nome,
+      dto.cpf,
+      dto.cnh,
+      dto.email,
       dto.telefone,
-      senhaCriptografada 
+      senhaCriptografada,
+      dto.role ?? 'cliente',
     );
     
     // A senha é omitida da resposta pelo @Exclude na entidade + ClassSerializerInterceptor
@@ -60,8 +61,30 @@ export class ClientesService {
   }
 
   async atualizar(id: number, dto: UpdateClienteDto): Promise<Cliente> {
-    await this.buscarPorId(id); 
-    return this.clienteRepository.atualizar(id, dto);
+    await this.buscarPorId(id);
+
+    // Revalida duplicidade de CPF/e-mail, ignorando o próprio registro
+    if (dto.cpf) {
+      const existente = await this.clienteRepository.buscarPorCpf(dto.cpf);
+      if (existente && existente.id !== id) {
+        throw new ConflictException(`Já existe um cliente cadastrado com o CPF ${dto.cpf}`);
+      }
+    }
+    if (dto.email) {
+      const existente = await this.clienteRepository.buscarPorEmail(dto.email);
+      if (existente && existente.id !== id) {
+        throw new ConflictException(`Já existe um cliente cadastrado com o e-mail ${dto.email}`);
+      }
+    }
+
+    // Nunca persistir senha em texto puro: criptografa antes de salvar
+    const dados: Partial<Cliente> = { ...dto };
+    if (dto.senha) {
+      const salt = await bcrypt.genSalt(10);
+      dados.senha = await bcrypt.hash(dto.senha, salt);
+    }
+
+    return this.clienteRepository.atualizar(id, dados);
   }
 
   async remover(id: number): Promise<void> {

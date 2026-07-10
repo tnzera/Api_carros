@@ -7,6 +7,12 @@ export abstract class IReservaRepository {
   abstract buscarPorId(id: number): Promise<Reserva | null>;
   abstract atualizar(id: number, dados: Partial<Reserva>): Promise<Reserva>;
   abstract remover(id: number): Promise<void>;
-  // Regra de negócio essencial: impede duplicidade de agendamento do mesmo veículo
-  abstract verificarDisponibilidade(carroId: number, dataInicio: Date, dataFim: Date): Promise<boolean>;
+  // Regra de negócio essencial: impede duplicidade de agendamento do mesmo veículo.
+  // ignorarReservaId: ao editar, exclui a própria reserva da checagem de conflito.
+  abstract verificarDisponibilidade(
+    carroId: number,
+    dataInicio: Date,
+    dataFim: Date,
+    ignorarReservaId?: number,
+  ): Promise<boolean>;
 }

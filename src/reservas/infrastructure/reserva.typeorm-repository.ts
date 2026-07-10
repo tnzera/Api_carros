@@ -19,7 +19,7 @@ export class ReservaTypeOrmRepository implements IReservaRepository {
     return new Reserva(
       entity.id,
       new Carro(entity.carro.id, entity.carro.marca, entity.carro.modelo, entity.carro.placa, Number(entity.carro.diaria)),
-      new Cliente(entity.cliente.id, entity.cliente.nome, entity.cliente.cpf, entity.cliente.cnh, entity.cliente.email, entity.cliente.telefone, entity.cliente.senha),
+      new Cliente(entity.cliente.id, entity.cliente.nome, entity.cliente.cpf, entity.cliente.cnh, entity.cliente.email, entity.cliente.telefone, entity.cliente.senha, entity.cliente.role),
       entity.dataInicio,
       entity.dataFim,
     );
@@ -68,16 +68,26 @@ export class ReservaTypeOrmRepository implements IReservaRepository {
     await this.repository.delete(id);
   }
 
-  async verificarDisponibilidade(carroId: number, dataInicio: Date, dataFim: Date): Promise<boolean> {
-    //validação de locação de veiculos na mesma data 
-    const conflito = await this.repository.createQueryBuilder('reserva')
+  async verificarDisponibilidade(
+    carroId: number,
+    dataInicio: Date,
+    dataFim: Date,
+    ignorarReservaId?: number,
+  ): Promise<boolean> {
+    //validação de locação de veiculos na mesma data
+    const query = this.repository.createQueryBuilder('reserva')
       .where('reserva.carro_id = :carroId', { carroId })
       .andWhere('reserva.data_inicio < :dataFim AND reserva.data_fim > :dataInicio', {
         dataInicio,
         dataFim,
-      })
-      .getOne();
+      });
 
+    // Ao editar, a própria reserva não conta como conflito
+    if (ignorarReservaId !== undefined) {
+      query.andWhere('reserva.id != :ignorarReservaId', { ignorarReservaId });
+    }
+
+    const conflito = await query.getOne();
     return !conflito;
   }
 }
