@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { ClientesService, CLIENTE_REPOSITORY } from './application/clientes.service';
+import { AdminSeeder } from './application/admin.seeder';
 import { ClienteTypeOrmEntity } from './infrastructure/cliente.typeorm-entity';
 import { ClienteTypeOrmRepository } from './infrastructure/cliente.typeorm-repository';
 import { ClientesController } from './presentation/clientes.controller';
@@ -12,6 +13,7 @@ import { ClientesController } from './presentation/clientes.controller';
   controllers: [ClientesController],
   providers: [
     ClientesService,
+    AdminSeeder,
     {
       provide: CLIENTE_REPOSITORY,
       useClass: ClienteTypeOrmRepository,

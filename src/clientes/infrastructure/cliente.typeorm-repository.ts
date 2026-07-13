@@ -63,6 +63,11 @@ export class ClienteTypeOrmRepository implements IClienteRepository {
     return entity ? this.toDomain(entity) : null;
 }
 
+  async existeAdmin(): Promise<boolean> {
+    const admin = await this.repository.findOne({ where: { role: 'admin' } });
+    return !!admin;
+  }
+
   async remover(id: number): Promise<void> {
     await this.repository.delete(id);
   }

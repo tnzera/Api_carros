@@ -155,15 +155,16 @@ npm run start:dev
 
 > As tabelas são criadas automaticamente na primeira execução (`synchronize: true` — apenas para desenvolvimento).
 
-### 2. Primeiro administrador
+### 2. Primeiro administrador (automático)
 
-Como todos os endpoints exigem login e apenas admins logam, o primeiro admin deve ser criado diretamente no banco (problema clássico do "primeiro usuário"). Com pelo menos um cliente cadastrado, promova-o:
+Como todos os endpoints exigem login e apenas admins logam, um banco recém-criado ficaria inacessível (problema clássico do "primeiro usuário"). Para resolver isso, **a aplicação faz um seed automático na inicialização**: se nenhum admin existir, um padrão é criado:
 
-```sql
-UPDATE clientes SET role = 'admin' WHERE email = 'seu@email.com';
+```
+email: admin@locadora.com
+senha: admin123
 ```
 
-A partir daí, novos admins são criados pelo próprio painel (campo **Tipo** no formulário de clientes).
+As credenciais são configuráveis via `ADMIN_EMAIL` / `ADMIN_PASSWORD` no `.env`. **Troque a senha após o primeiro login.** A partir daí, novos admins são criados pelo próprio painel (campo **Tipo** no formulário de clientes).
 
 ### 3. Frontend (Painel)
 

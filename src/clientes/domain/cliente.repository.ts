@@ -7,6 +7,8 @@ export abstract class IClienteRepository {
   abstract buscarPorId(id: number): Promise<Cliente | null>;
   abstract buscarPorCpf(cpf: string): Promise<Cliente | null>; 
   abstract buscarPorEmail(email: string): Promise<Cliente | null>;
+  // Usado pelo seed inicial: garante que o sistema nunca fique sem administrador
+  abstract existeAdmin(): Promise<boolean>;
   abstract atualizar(id: number, dados: Partial<Cliente>): Promise<Cliente>;
   abstract remover(id: number): Promise<void>;
 }
